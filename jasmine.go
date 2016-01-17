@@ -27,7 +27,7 @@ func callSyncInGo(fn func()) func(done func()) {
 			defer func() {
 				r := recover()
 				if r != nil {
-					Fail(r.(string))
+					Fail(r.(*js.Error).String())
 					done()
 				}
 			}()
