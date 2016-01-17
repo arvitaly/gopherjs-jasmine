@@ -13,50 +13,63 @@ func XDescribe(name string, fn func()) {
 	js.Global.Call("xdescribe", name, fn)
 }
 
+//For callback in goroutines
+func callAsyncInGo(fn func(func())) func(done func()) {
+	return func(done func()) {
+		go func() {
+			fn(done)
+		}()
+	}
+}
+func callSyncInGo(fn func()) func(done func()) {
+	return func(done func()) {
+		go func() {
+			fn()
+			done()
+		}()
+	}
+}
+
 // It is a spec to be tested with Expectations.
 func It(behavior string, fn func()) {
-	js.Global.Call("it", behavior, fn)
+	js.Global.Call("it", behavior, createFuncWithVisibleDone(callSyncInGo(fn)))
 }
 
 // XIt is a cancled or commented out spec which will not be run.
 func XIt(behavior string, fn func()) {
-	js.Global.Call("xit", behavior, fn)
+	js.Global.Call("xit", behavior, createFuncWithVisibleDone(callSyncInGo(fn)))
 }
 
 func ItAsync(behavior string, fn func(func())) {
-
-	var cb = js.MakeFunc(func(this *js.Object, args []*js.Object) interface{} {
-		return js.Global.Get("eval").Invoke("var a = function(cb){ return function(done){ return cb(done); }; }; a")
-	}).Invoke().Invoke(fn)
-	js.Global.Call("it", behavior, cb)
+	js.Global.Call("it", behavior, createFuncWithVisibleDone(callAsyncInGo(fn)))
 }
 
 func XitAsync(behavior string, fn func(func())) {
 
-	js.Global.Call("xit", behavior, createFuncWithVisibleDone(fn))
+	js.Global.Call("xit", behavior, createFuncWithVisibleDone(callAsyncInGo(fn)))
 }
 
 func BeforeEach(fn func()) {
-	js.Global.Call("beforeEach", fn)
+	js.Global.Call("beforeEach", createFuncWithVisibleDone(callSyncInGo(fn)))
 }
 
 func BeforeEachAsync(fn func(func())) {
-	js.Global.Call("beforeEach", createFuncWithVisibleDone(fn))
+	js.Global.Call("beforeEach", createFuncWithVisibleDone(callAsyncInGo(fn)))
 }
 
 func BeforeAllAsync(fn func(func())) {
-	js.Global.Call("beforeAll", createFuncWithVisibleDone(fn))
+	js.Global.Call("beforeAll", createFuncWithVisibleDone(callAsyncInGo(fn)))
 }
 
 func AfterEach(fn func()) {
-	js.Global.Call("afterEach", fn)
+	js.Global.Call("afterEach", createFuncWithVisibleDone(callSyncInGo(fn)))
 }
 
 func AfterEachAsync(fn func(func())) {
-	js.Global.Call("afterEach", createFuncWithVisibleDone(fn))
+	js.Global.Call("afterEach", createFuncWithVisibleDone(callAsyncInGo(fn)))
 }
 func AfterAllAsync(fn func(func())) {
-	js.Global.Call("afterAll", createFuncWithVisibleDone(fn))
+	js.Global.Call("afterAll", createFuncWithVisibleDone(callAsyncInGo(fn)))
 }
 
 func Expect(value interface{}) *Expectation {
@@ -69,6 +82,11 @@ func SetDefaultTimeoutInterval(interval int) {
 
 func Fail(message string) {
 	js.Global.Call("fail", message)
+}
+
+func Run(calls func()) bool {
+	calls()
+	return true
 }
 
 func createFuncWithVisibleDone(fn func(func())) *js.Object {

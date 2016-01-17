@@ -109,22 +109,67 @@ func RunJasmineTests() {
 			}()
 		})
 	})
+	Describe("testing sync functions with blocked channels", func() {
+		SetDefaultTimeoutInterval(10)
+		BeforeEach(func() {
+			var c = make(chan bool)
+			go func() {
+				time.AfterFunc(time.Millisecond*3, func() {
+					c <- true
+				})
+			}()
+			<-c
+		})
+		It("testing It, BeforeEach, AfterEach", func() {
+			var c = make(chan bool)
+			go func() {
+				time.AfterFunc(time.Millisecond*3, func() {
+					c <- true
+				})
+			}()
+			<-c
+		})
+		AfterEach(func() {
+			var c = make(chan bool)
+			go func() {
+				time.AfterFunc(time.Millisecond*3, func() {
+					c <- true
+				})
+			}()
+			<-c
+		})
+	})
 	Describe("testing async functions", func() {
 		SetDefaultTimeoutInterval(10)
 		BeforeEachAsync(func(done func()) {
-			time.AfterFunc(time.Millisecond*3, func() {
-				done()
-			})
+			var c = make(chan bool)
+			go func() {
+				time.AfterFunc(time.Millisecond*3, func() {
+					c <- true
+				})
+			}()
+			<-c
+			done()
 		})
 		ItAsync("ItAsync with BeforeEachAsync and AfterEachAsync", func(done func()) {
-			time.AfterFunc(time.Millisecond*3, func() {
-				done()
-			})
+			var c = make(chan bool)
+			go func() {
+				time.AfterFunc(time.Millisecond*3, func() {
+					c <- true
+				})
+			}()
+			<-c
+			done()
 		})
 		AfterEachAsync(func(done func()) {
-			time.AfterFunc(time.Millisecond*3, func() {
-				done()
-			})
+			var c = make(chan bool)
+			go func() {
+				time.AfterFunc(time.Millisecond*3, func() {
+					c <- true
+				})
+			}()
+			<-c
+			done()
 		})
 	})
 }
