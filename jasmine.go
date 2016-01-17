@@ -24,6 +24,13 @@ func callAsyncInGo(fn func(func())) func(done func()) {
 func callSyncInGo(fn func()) func(done func()) {
 	return func(done func()) {
 		go func() {
+			defer func() {
+				r := recover()
+				if r != nil {
+					Fail(r.(string))
+					done()
+				}
+			}()
 			fn()
 			done()
 		}()
