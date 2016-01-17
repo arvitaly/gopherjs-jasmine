@@ -1,6 +1,8 @@
 package jasmine
 
-import "github.com/gopherjs/gopherjs/js"
+import (
+	"github.com/gopherjs/gopherjs/js"
+)
 
 // Describe discribes a test suit containing multiple specs.
 // The specs are run inside the callback function fn.
@@ -21,13 +23,18 @@ func callAsyncInGo(fn func(func())) func(done func()) {
 		}()
 	}
 }
+
+type Errorer interface {
+	Error() string
+}
+
 func callSyncInGo(fn func()) func(done func()) {
 	return func(done func()) {
 		go func() {
 			defer func() {
 				r := recover()
 				if r != nil {
-					Fail(r.(*js.Error).String())
+					Fail(r.(Errorer).Error())
 					done()
 				}
 			}()
