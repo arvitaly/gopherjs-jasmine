@@ -1,8 +1,6 @@
 package jasmine
 
-import (
-	"time"
-)
+import "time"
 
 // +testing
 func caller(f func()) {
@@ -170,6 +168,77 @@ func RunJasmineTests() {
 			}()
 			<-c
 			done()
+		})
+	})
+	Describe("Spy", func() {
+		var spy1 *Spy
+		BeforeEach(func() {
+			spy1 = CreateSpy("Test", func(arg1 int) int {
+				return arg1 + 2
+			})
+		})
+		It("And return value", func() {
+			spy1.And.ReturnValue("val1")
+			Expect(spy1.Invoke()).ToBe("val1")
+		})
+		It("And call fake", func() {
+			spy1.And.CallFake(func(arg1 int, arg2 int) int {
+				return arg1 + arg2
+			})
+			Expect(spy1.Invoke(1, 2)).ToBe(3)
+		})
+		It("And callThrough", func() {
+			spy1.And.CallThrough()
+			Expect(spy1.Invoke(2)).ToBe(4)
+		})
+		It("And stub", func() {
+			spy1.And.Stub()
+			Expect(spy1.Invoke(1, 2, 3)).ToBeUndefined()
+		})
+		It("Calls any()", func() {
+			Expect(spy1.Calls.Any()).ToBeFalsy()
+			spy1.Invoke()
+			Expect(spy1.Calls.Any()).ToBeTruthy()
+		})
+		It("Calls Count()", func() {
+			spy1.Invoke()
+			spy1.Invoke()
+			Expect(spy1.Calls.Count()).ToBe(2)
+		})
+		It("Calls ArgsFor()", func() {
+			spy1.Invoke(1, 2)
+			spy1.Invoke(3, 4)
+			Expect(spy1.Calls.ArgsFor(0)[0]).ToBe(1)
+			Expect(spy1.Calls.ArgsFor(1)).ToEqual([]interface{}{3, 4})
+		})
+		It("Calls AllArgs()", func() {
+			spy1.Invoke(5, "6")
+			spy1.Invoke(7)
+			Expect(spy1.Calls.AllArgs()).ToEqual([]interface{}{[]interface{}{5, "6"}, []interface{}{7}})
+		})
+		It("Calls All()", func() {
+			spy1.Invoke(1)
+			Expect(spy1.Calls.All()[0].args).ToEqual([]interface{}{1})
+		})
+		It("Calls MostRecent", func() {
+			spy1.Invoke(1)
+			spy1.Invoke(2)
+			spy1.Invoke(3)
+			Expect(spy1.Calls.MostRecent().args).ToEqual([]interface{}{3})
+		})
+		It("Calls First", func() {
+			spy1.Invoke(4)
+			spy1.Invoke(2)
+			spy1.Invoke(3)
+			Expect(spy1.Calls.First().args).ToEqual([]interface{}{4})
+		})
+		It("Calls First", func() {
+			spy1.Invoke(4)
+			spy1.Invoke(4)
+			Expect(spy1.Calls.Count()).ToBe(2)
+			spy1.Calls.Reset()
+			spy1.Invoke(2)
+			Expect(spy1.Calls.Count()).ToBe(1)
 		})
 	})
 }
